@@ -1,218 +1,195 @@
-local ImGui = {}
+-- Импорт библиотек
+local Library = {}
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
-local windows = {}
-local drawLists = {}
+-- Вспомогательные переменные и функции
+local UIElements = {}
 
-function ImGui.Begin(windowName)
-    if not windows[windowName] then
-        local ScreenGui = Instance.new("ScreenGui")
-        ScreenGui.Name = windowName
-        ScreenGui.Parent = game:GetService("CoreGui")
-        ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        ScreenGui.ResetOnSpawn = false
-        local window = Instance.new("Frame")
-        window.Name = windowName
-        window.Size = UDim2.new(0, 300, 0, 300)
-        window.Position = UDim2.new(0, 100, 0, 100)
-        window.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        window.Parent = ScreenGui
-
-        windows[windowName] = {
-            frame = window,
-            children = {}
-        }
-    end
-    return windows[windowName]
-end
-function ImGui.End()
+local function createFrame(name, size, position, parent)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.Size = UDim2.new(0, size.X, 0, size.Y)
+	frame.Position = UDim2.new(0, position.X, 0, position.Y)
+	frame.BackgroundTransparency = 1
+	frame.Parent = parent
+	return frame
 end
 
-function ImGui.Button(windowName, buttonText, onClick)
-    local parentWindow = windows[windowName]
-    if parentWindow then
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0, 100, 0, 50)
-        button.Position = UDim2.new(0, 10, 0, 50 * #parentWindow.children + 10)
-        button.Text = buttonText
-        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        button.Parent = parentWindow.frame
-
-        table.insert(parentWindow.children, button)
-
-        button.MouseButton1Click:Connect(onClick)
-    end
-end
-function ImGui.CheckBox(windowName, labelText, value, onChange)
-    local parentWindow = windows[windowName]
-    if parentWindow then
-        local checkBoxFrame = Instance.new("Frame")
-        checkBoxFrame.Size = UDim2.new(0, 100, 0, 50)
-        checkBoxFrame.Position = UDim2.new(0, 10, 0, 50 * #parentWindow.children + 10)
-        checkBoxFrame.BackgroundTransparency = 1
-        checkBoxFrame.Parent = parentWindow.frame
-
-        local checkBox = Instance.new("TextButton")
-        checkBox.Size = UDim2.new(0, 30, 0, 30)
-        checkBox.Position = UDim2.new(0, 0, 0, 0)
-        checkBox.BackgroundColor3 = value and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-        checkBox.Parent = checkBoxFrame
-
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(0, 60, 0, 30)
-        label.Position = UDim2.new(0, 35, 0, 0)
-        label.Text = labelText
-        label.BackgroundTransparency = 1
-        label.Parent = checkBoxFrame
-
-        table.insert(parentWindow.children, checkBoxFrame)
-
-        checkBox.MouseButton1Click:Connect(function()
-            value = not value
-            checkBox.BackgroundColor3 = value and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
-            if onChange then
-                onChange(value)
-            end
-        end)
-    end
+local function isMouseInBounds(pos, size)
+	local mouseX, mouseY = Mouse.X, Mouse.Y
+	return mouseX >= pos.X and mouseX <= pos.X + size.X and mouseY >= pos.Y and mouseY <= pos.Y + size.Y
 end
 
-function ImGui.TextBox(windowName, defaultText, onTextChange)
-    local parentWindow = windows[windowName]
-    if parentWindow then
-        local textBox = Instance.new("TextBox")
-        textBox.Size = UDim2.new(0, 200, 0, 50)
-        textBox.Position = UDim2.new(0, 10, 0, 50 * #parentWindow.children + 10)
-        textBox.Text = defaultText
-        textBox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        textBox.Parent = parentWindow.frame
-
-        table.insert(parentWindow.children, textBox)
-
-        textBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed and onTextChange then
-                onTextChange(textBox.Text)
-            end
-        end)
-    end
+-- Основные функции
+function Library:Begin(name, size, position)
+	local frame = createFrame(name, size, position, game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+	table.insert(UIElements, frame)
+	return frame
 end
 
-function ImGui.Slider(windowName, labelText, min, max, currentValue, onValueChange)
-    local parentWindow = windows[windowName]
-    if parentWindow then
-        local sliderFrame = Instance.new("Frame")
-        sliderFrame.Size = UDim2.new(0, 200, 0, 50)
-        sliderFrame.Position = UDim2.new(0, 10, 0, 50 * #parentWindow.children + 10)
-        sliderFrame.BackgroundTransparency = 1
-        sliderFrame.Parent = parentWindow.frame
-
-        local sliderLabel = Instance.new("TextLabel")
-        sliderLabel.Size = UDim2.new(0, 50, 0, 30)
-        sliderLabel.Position = UDim2.new(0, 0, 0, 0)
-        sliderLabel.Text = labelText
-        sliderLabel.BackgroundTransparency = 1
-        sliderLabel.Parent = sliderFrame
-
-        local slider = Instance.new("TextButton")
-        slider.Size = UDim2.new(0, 100, 0, 30)
-        slider.Position = UDim2.new(0, 60, 0, 0)
-        slider.Text = tostring(currentValue)
-        slider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-        slider.Parent = sliderFrame
-
-        table.insert(parentWindow.children, sliderFrame)
-
-        slider.MouseButton1Click:Connect(function()
-            currentValue = math.clamp(currentValue + 1, min, max)
-            slider.Text = tostring(currentValue)
-            if onValueChange then
-                onValueChange(currentValue)
-            end
-        end)
-    end
-end
-function ImGui.AddRectWithCorners(drawList, position, size, color, cornerRadius)
-    local rect = Instance.new("Frame")
-    rect.Size = UDim2.new(0, size.X, 0, size.Y)
-    rect.Position = UDim2.new(0, position.X, 0, position.Y)
-    rect.BackgroundColor3 = color
-    rect.Parent = drawList
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, cornerRadius)
-    corner.Parent = rect
-end
-function ImGui.AddText(drawList, text, position, size, font, shadowEnabled, outlineEnabled, textColor, shadowColor, outlineColor)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, size.X, 0, size.Y)
-    label.Position = UDim2.new(0, position.X, 0, position.Y)
-    label.Text = text
-    label.TextColor3 = textColor
-    label.Font = font
-    label.TextSize = size.Y
-    label.BackgroundTransparency = 1
-    label.Parent = drawList
-    if shadowEnabled then
-        local shadow = Instance.new("TextLabel")
-        shadow.Size = label.Size
-        shadow.Position = label.Position + UDim2.new(0, 2, 0, 2)
-        shadow.Text = text
-        shadow.TextColor3 = shadowColor
-        shadow.Font = font
-        shadow.TextSize = size.Y
-        shadow.BackgroundTransparency = 1
-        shadow.Parent = drawList
-    end
-
-    if outlineEnabled then
-        local function createOutline(offsetX, offsetY)
-            local outline = Instance.new("TextLabel")
-            outline.Size = label.Size
-            outline.Position = label.Position + UDim2.new(0, offsetX, 0, offsetY)
-            outline.Text = text
-            outline.TextColor3 = outlineColor
-            outline.Font = font
-            outline.TextSize = size.Y
-            outline.BackgroundTransparency = 1
-            outline.Parent = drawList
-        end
-        createOutline(1, 0)
-        createOutline(-1, 0)
-        createOutline(0, 1)
-        createOutline(0, -1)
-    end
+function Library:BeginChild(name, size, position, parent)
+	local frame = createFrame(name, size, position, parent)
+	table.insert(UIElements, frame)
+	return frame
 end
 
-function ImGui.ForeGroundDrawList()
-    local drawList = Instance.new("Folder")
-    drawList.Name = "ForegroundDrawList"
-    drawList.Parent = game.Players.LocalPlayer.PlayerGui.ScreenGui
-    table.insert(drawLists, drawList)
-    return drawList
+function Library:End()
+	if #UIElements > 0 then
+		table.remove(UIElements, #UIElements)
+	end
 end
 
-function ImGui.AddLine(drawList, pointA, pointB, color, thickness)
-    local line = Instance.new("Frame")
-    line.Size = UDim2.new(0, (pointB - pointA).Magnitude, 0, thickness)
-    line.Position = UDim2.new(0, pointA.X, 0, pointA.Y)
-    line.BackgroundColor3 = color
-    line.Parent = drawList
+function Library:EndChild()
+	if #UIElements > 0 then
+		table.remove(UIElements, #UIElements)
+	end
 end
 
-function ImGui.AddRect(drawList, position, size, color)
-    local rect = Instance.new("Frame")
-    rect.Size = UDim2.new(0, size.X, 0, size.Y)
-    rect.Position = UDim2.new(0, position.X, 0, position.Y)
-    rect.BackgroundColor3 = color
-    rect.Parent = drawList
+function Library:CheckBox(name, position, parent, default)
+	local frame = createFrame(name, Vector2.new(20, 20), position, parent)
+	local checkbox = Instance.new("TextButton")
+	checkbox.Size = UDim2.new(1, 0, 1, 0)
+	checkbox.BackgroundColor3 = default and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+	checkbox.Text = ""
+	checkbox.Parent = frame
+
+	local checked = default
+
+	checkbox.MouseButton1Click:Connect(function()
+		checked = not checked
+		checkbox.BackgroundColor3 = checked and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+	end)
+
+	return checked
 end
 
-function ImGui.AddCircle(drawList, position, radius, color)
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, radius * 2, 0, radius * 2)
-    circle.Position = UDim2.new(0, position.X - radius, 0, position.Y - radius)
-    circle.BackgroundColor3 = color
-    circle.Parent = drawList
+function Library:Button(name, position, size, parent, callback)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, size.X, 0, size.Y)
+	button.Position = UDim2.new(0, position.X, 0, position.Y)
+	button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+	button.Text = name
+	button.Parent = parent
+
+	button.MouseButton1Click:Connect(function()
+		if callback then callback() end
+	end)
 end
 
+function Library:TextBox(name, position, size, parent, defaultText)
+	local textBox = Instance.new("TextBox")
+	textBox.Size = UDim2.new(0, size.X, 0, size.Y)
+	textBox.Position = UDim2.new(0, position.X, 0, position.Y)
+	textBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+	textBox.Text = defaultText or ""
+	textBox.Parent = parent
 
-return ImGui
+	return textBox
+end
+
+function Library:Slider(name, position, size, min, max, default, parent, callback)
+	local slider = Instance.new("TextButton")
+	slider.Size = UDim2.new(0, size.X, 0, size.Y)
+	slider.Position = UDim2.new(0, position.X, 0, position.Y)
+	slider.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+	slider.Text = name
+	slider.Parent = parent
+
+	local currentValue = default or min
+
+	slider.MouseButton1Down:Connect(function()
+		local moving = true
+		while moving do
+			wait()
+			local mouseX = Mouse.X
+			local newValue = math.clamp((mouseX - position.X) / size.X * (max - min) + min, min, max)
+			currentValue = newValue
+			if callback then callback(newValue) end
+			if not Mouse.Button1Down then
+				moving = false
+			end
+		end
+	end)
+
+	return currentValue
+end
+
+function Library:ForeGroundDrawList()
+	return Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+end
+
+function Library:BackGroundDrawList()
+	return Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+end
+
+-- Примитивы
+function Library:AddLine(drawList, startPos, endPos, color, thickness)
+	local line = Instance.new("Frame")
+	line.Size = UDim2.new(0, (endPos - startPos).magnitude, 0, thickness)
+	line.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+	line.BackgroundColor3 = color
+	line.Parent = drawList
+end
+
+function Library:AddRect(drawList, position, size, color)
+	local rect = Instance.new("Frame")
+	rect.Size = UDim2.new(0, size.X, 0, size.Y)
+	rect.Position = UDim2.new(0, position.X, 0, position.Y)
+	rect.BackgroundColor3 = color
+	rect.BorderSizePixel = 1
+	rect.BorderColor3 = color
+	rect.Parent = drawList
+end
+
+function Library:AddRectFilled(drawList, position, size, color)
+	local rect = Instance.new("Frame")
+	rect.Size = UDim2.new(0, size.X, 0, size.Y)
+	rect.Position = UDim2.new(0, position.X, 0, position.Y)
+	rect.BackgroundColor3 = color
+	rect.Parent = drawList
+end
+
+function Library:AddCircle(drawList, position, radius, color)
+	local circle = Instance.new("ImageLabel")
+	circle.Image = "rbxassetid://5554831670"
+	circle.Size = UDim2.new(0, radius * 2, 0, radius * 2)
+	circle.Position = UDim2.new(0, position.X - radius, 0, position.Y - radius)
+	circle.BackgroundTransparency = 1
+	circle.ImageColor3 = color
+	circle.Parent = drawList
+end
+
+function Library:AddCircleFilled(drawList, position, radius, color)
+	local circle = Instance.new("ImageLabel")
+	circle.Image = "rbxassetid://5554831670"
+	circle.Size = UDim2.new(0, radius * 2, 0, radius * 2)
+	circle.Position = UDim2.new(0, position.X - radius, 0, position.Y - radius)
+	circle.BackgroundTransparency = 1
+	circle.ImageColor3 = color
+	circle.Parent = drawList
+end
+
+function Library:AddText(drawList, position, text, color)
+	local textLabel = Instance.new("TextLabel")
+	textLabel.Text = text
+	textLabel.Size = UDim2.new(0, 200, 0, 50)
+	textLabel.Position = UDim2.new(0, position.X, 0, position.Y)
+	textLabel.TextColor3 = color
+	textLabel.BackgroundTransparency = 1
+	textLabel.Parent = drawList
+end
+
+function Library:AddCornerRect(drawList, position, size, color, radius)
+	local cornerRect = Instance.new("Frame")
+	cornerRect.Size = UDim2.new(0, size.X, 0, size.Y)
+	cornerRect.Position = UDim2.new(0, position.X, 0, position.Y)
+	cornerRect.BackgroundColor3 = color
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = cornerRect
+	cornerRect.Parent = drawList
+end
+
+return Library
