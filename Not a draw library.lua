@@ -23,8 +23,8 @@ local function isMouseInBounds(pos, size)
 end
 
 -- Основные функции
-function Library:Begin(name, size, position)
-	local frame = createFrame(name, size, position, game.Players.LocalPlayer:WaitForChild("PlayerGui"))
+function Library:Begin(name, size, position, gui)
+	local frame = createFrame(name, size, position, gui)
 	table.insert(UIElements, frame)
 	return frame
 end
