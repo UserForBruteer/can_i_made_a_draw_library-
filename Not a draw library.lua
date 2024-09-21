@@ -117,11 +117,15 @@ function Library:Slider(name, position, size, min, max, default, parent, callbac
 end
 
 function Library:ForeGroundDrawList()
-	return Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+	local fgdl = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+	fgdl.name = "ForeGroundDrawList"
+	return fgdl
 end
 
 function Library:BackGroundDrawList()
-	return Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+	local bgdl = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+	bgdl.name = "BackGroundDrawList"
+	return bgdl
 end
 
 -- Примитивы
