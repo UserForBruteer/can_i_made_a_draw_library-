@@ -10,7 +10,7 @@ function ImGui.Begin(windowName)
         window.Size = UDim2.new(0, 300, 0, 300)
         window.Position = UDim2.new(0, 100, 0, 100)
         window.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        window.Parent = game.Players.LocalPlayer.PlayerGui.ScreenGui
+        window.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
         windows[windowName] = {
             frame = window,
