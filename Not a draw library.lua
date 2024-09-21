@@ -5,12 +5,14 @@ local drawLists = {}
 
 function ImGui.Begin(windowName)
     if not windows[windowName] then
+        local scrngui = Instance.new("ScreenGui")
+        scrngui.Parent = game.Players.LocalPlayer.:WaitForChild("PlayerGui")
         local window = Instance.new("Frame")
         window.Name = windowName
         window.Size = UDim2.new(0, 300, 0, 300)
         window.Position = UDim2.new(0, 100, 0, 100)
         window.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        window.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+        window.Parent = game.Players.LocalPlayer.:WaitForChild("PlayerGui").ScreenGui
 
         windows[windowName] = {
             frame = window,
