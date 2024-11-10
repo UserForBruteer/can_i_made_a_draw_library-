@@ -1,3 +1,4 @@
+print('[NADL] initilizating')
 -- GUI Library for Roblox
 local GUI = {}
 local player = game.Players.LocalPlayer
@@ -156,5 +157,5 @@ function GUI.AddCircle(position, radius, color)
     table.insert(GUI.elements, circle)
     return circle
 end
-
+print('[NADL] inited')
 return GUI
