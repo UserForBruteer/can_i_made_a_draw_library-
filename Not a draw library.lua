@@ -1,17 +1,24 @@
+-- GUI Library for Roblox
 local GUI = {}
-local UIS = game:GetService("UserInputService")
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Инициализация библиотеки
 function GUI.Start()
     GUI.elements = {}
     GUI.foregroundColor = Color3.fromRGB(0, 0, 0)
     GUI.backgroundColor = Color3.fromRGB(255, 255, 255)
 end
+
+-- Завершение кадра и отрисовка всех элементов
 function GUI.End()
     for _, element in pairs(GUI.elements) do
-        element.Parent = script.Parent
+        element.Parent = screenGui
     end
 end
 
+-- Создание нового кадра (удаляет старые элементы)
 function GUI.NewFrame()
     for _, element in pairs(GUI.elements) do
         element:Destroy()
@@ -19,14 +26,17 @@ function GUI.NewFrame()
     GUI.elements = {}
 end
 
+-- Установка цвета переднего плана
 function GUI.ForeGround(color)
     GUI.foregroundColor = color
 end
 
+-- Установка цвета заднего плана
 function GUI.BackGround(color)
     GUI.backgroundColor = color
 end
 
+-- Создание текстового поля
 function GUI.Text(text, position)
     local label = Instance.new("TextLabel")
     label.Text = text
@@ -38,6 +48,7 @@ function GUI.Text(text, position)
     return label
 end
 
+-- Создание кнопки
 function GUI.Button(name, position, size, onClick)
     local button = Instance.new("TextButton")
     button.Text = name
@@ -51,6 +62,7 @@ function GUI.Button(name, position, size, onClick)
     return button
 end
 
+-- Создание переключателя (CheckBox)
 function GUI.CheckBox(name, position, size, default, onToggle)
     local checkBox = Instance.new("TextButton")
     checkBox.Text = default and "✔" or ""
@@ -69,6 +81,7 @@ function GUI.CheckBox(name, position, size, default, onToggle)
     return checkBox
 end
 
+-- Создание слайдера
 function GUI.Slider(name, position, size, min, max, default, onChange)
     local slider = Instance.new("Frame")
     slider.Position = UDim2.new(0, position.X, 0, position.Y)
@@ -85,14 +98,19 @@ function GUI.Slider(name, position, size, min, max, default, onChange)
     
     knob.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            UIS.InputChanged:Connect(function(moveInput)
+            local connection
+            connection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
                 if moveInput.UserInputType == Enum.UserInputType.MouseMovement then
-                    local mousePos = UIS:GetMouseLocation().X
+                    local mousePos = game:GetService("UserInputService"):GetMouseLocation().X
                     local relativePos = math.clamp((mousePos - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
                     value = min + (max - min) * relativePos
                     knob.Position = UDim2.new(relativePos, 0, 0, 0)
                     if onChange then onChange(value) end
                 end
+            end)
+            
+            input.UserInputEnded:Connect(function()
+                connection:Disconnect()
             end)
         end
     end)
@@ -100,6 +118,8 @@ function GUI.Slider(name, position, size, min, max, default, onChange)
     table.insert(GUI.elements, slider)
     return slider
 end
+
+-- Создание линии
 function GUI.AddLine(startPos, endPos, thickness, color)
     local line = Instance.new("Frame")
     line.Size = UDim2.new(0, (endPos - startPos).Magnitude, 0, thickness)
@@ -110,6 +130,7 @@ function GUI.AddLine(startPos, endPos, thickness, color)
     return line
 end
 
+-- Создание прямоугольника
 function GUI.AddRect(position, size, color)
     local rect = Instance.new("Frame")
     rect.Position = UDim2.new(0, position.X, 0, position.Y)
@@ -119,6 +140,7 @@ function GUI.AddRect(position, size, color)
     return rect
 end
 
+-- Создание круга
 function GUI.AddCircle(position, radius, color)
     local circle = Instance.new("Frame")
     circle.Position = UDim2.new(0, position.X - radius, 0, position.Y - radius)
